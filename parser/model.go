@@ -22,3 +22,7 @@ type response struct {
 	dayOfWeek  []int
 	command    string
 }
+
+const (
+	MinuteLimit = 59
+)

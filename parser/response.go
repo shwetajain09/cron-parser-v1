@@ -2,40 +2,44 @@ package parser
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// func BuildResponse(body *body) (*response, error) {
-// 	res := &response{
-// 		command: body.command,
-// 	}
-// 	minutes, minutesErr := prepare(body.minutes, "minute", isValidMinute, 59)
-// 	hour, hourErr := prepare(body.hour, "hour", isValidHour, 23)
-// 	dom, domErr := prepare(body.dayOfMonth, "day of month", isValidDOM, 31)
-// 	month, monthErr := prepare(body.month, "month", isValidMonth, 12)
-// 	dow, dowErr := prepare(body.dayOfWeek, "day of week", isValidDOW, 7)
-// 	err := errors.Join(minutesErr, hourErr, domErr, monthErr, dowErr)
-// 	sort.Ints(minutes)
-// 	res.minutes = minutes
-// 	sort.Ints(hour)
-// 	res.hour = hour
-// 	sort.Ints(dom)
-// 	res.dayOfMonth = dom
-// 	sort.Ints(month)
-// 	res.month = month
-// 	sort.Ints(dow)
-// 	res.dayOfWeek = dow
+// BuildResponse will prepare the response value for each field that includes validation
+func BuildResponse(body *body) (*response, error) {
+	res := &response{
+		command: body.command,
+	}
+	minutes, minutesErr := prepare(body.minutes, "minute", isValidMinute, MinuteLimit)
+	hour, hourErr := prepare(body.hour, "hour", isValidHour, 23)
+	dom, domErr := prepare(body.dayOfMonth, "day of month", isValidDOM, 31)
+	month, monthErr := prepare(body.month, "month", isValidMonth, 12)
+	dow, dowErr := prepare(body.dayOfWeek, "day of week", isValidDOW, 7)
+	err := errors.Join(minutesErr, hourErr, domErr, monthErr, dowErr)
+	// sort and save in response object
+	sort.Ints(minutes)
+	res.minutes = minutes
+	sort.Ints(hour)
+	res.hour = hour
+	sort.Ints(dom)
+	res.dayOfMonth = dom
+	sort.Ints(month)
+	res.month = month
+	sort.Ints(dow)
+	res.dayOfWeek = dow
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return res, nil
-// }
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
 
+// prepareHyphenString defines and process the rules for hyphen in a field value
 func prepareHyphenString(str []string, expField string, fn Validate) ([]int, error) {
 	arr := []int{}
-	str[0], str[1] = processStrings(expField, str[0], str[1])
+	str[0], str[1] = processEnglishWord(expField, str[0], str[1])
 
 	initial, iErr := strconv.Atoi(str[0])
 	last, lErr := strconv.Atoi(str[1])
@@ -51,7 +55,8 @@ func prepareHyphenString(str []string, expField string, fn Validate) ([]int, err
 	return arr, nil
 }
 
-func processStrings(expField, str1, str2 string) (string, string) {
+// processEnglishWord process the formatted value of the english word to the respective field
+func processEnglishWord(expField, str1, str2 string) (string, string) {
 	if expField == "month" {
 		s0 := formatFieldValues(str1, allowedEnglishMonthNames)
 		s1 := formatFieldValues(str2, allowedEnglishMonthNames)
@@ -75,9 +80,10 @@ func processStrings(expField, str1, str2 string) (string, string) {
 	return str1, str2
 }
 
+//prepareSlashString defines and process the rules for slash in a field value
 func prepareSlashString(str []string, expField string, fn Validate, max int) ([]int, error) {
 	arr := []int{}
-	str[0], str[1] = processStrings(expField, str[0], str[1])
+	str[0], str[1] = processEnglishWord(expField, str[0], str[1])
 	// value is *
 	start := 0
 
@@ -109,6 +115,7 @@ func prepareSlashString(str []string, expField string, fn Validate, max int) ([]
 	return arr, nil
 }
 
+//prepare takes the field value, validate and prepare the response
 func prepare(str string, expField string, fn Validate, max int) ([]int, error) {
 	arr := []int{}
 	subStringsComma := strings.Split(str, ",")
@@ -162,6 +169,7 @@ func prepare(str string, expField string, fn Validate, max int) ([]int, error) {
 	return arr, nil
 }
 
+// formatFieldValues changes the english word to the corresponding integer value for month and day of week
 func formatFieldValues(str string, allowedVals []string) int {
 	for i, j := range allowedVals {
 		if j == strings.ToLower(str) {
@@ -171,10 +179,11 @@ func formatFieldValues(str string, allowedVals []string) int {
 	return -1
 }
 
+// addAll process the asterisk values
 func addAll(expField string) []int {
 	switch expField {
 	case "minute":
-		return allValues(0, 59)
+		return allValues(0, MinuteLimit)
 	case "hour":
 		return allValues(0, 23)
 	case "day of month":
@@ -187,6 +196,7 @@ func addAll(expField string) []int {
 	return []int{}
 }
 
+//allValues returns all the integers from within the min and max range
 func allValues(min, max int) []int {
 	arr := []int{}
 	for i := min; i <= max; i++ {

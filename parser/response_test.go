@@ -33,7 +33,7 @@ func Test_addAll(t *testing.T) {
 		expField string
 		expected []int
 	}{
-		{"Minute value", "minute", allValues(0, 59)},
+		{"Minute value", "minute", allValues(0, MinuteLimit)},
 		{"Hour value", "hour", allValues(0, 23)},
 		{"day of month value", "day of month", allValues(1, 31)},
 		{"month value", "month", allValues(1, 12)},
@@ -56,19 +56,20 @@ func Test_prepare_minute(t *testing.T) {
 		str      string
 		expField string
 		fn       Validate
-		max      int
 		expected []int
 		err      error
 	}{
-		{"asterisk", "*", "minute", isValidMinute, 59, allValues(0, 59), nil},
-		{"empty field", "", "minute", isValidMinute, 59, []int{}, errors.New("invalid minute value")},
-		{"step value", "2-8/2", "minute", isValidMinute, 59, []int{2, 4, 6, 8}, nil},
-		{"continuation", "2-5", "minute", isValidMinute, 59, []int{2, 3, 4, 5}, nil},
+		{"asterisk", "*", "minute", isValidMinute, allValues(0, MinuteLimit), nil},
+		{"empty field", "", "minute", isValidMinute, []int{}, errors.New("invalid minute value")},
+		{"step value", "2-8/2", "minute", isValidMinute, []int{2, 4, 6, 8}, nil},
+		{"continuation", "2-5", "minute", isValidMinute, []int{2, 3, 4, 5}, nil},
+		{"incompatible minute value", "u", "minute", isValidMinute, []int{}, errors.New("invalid minute value")},
+		{"out of bounds minute value", "90", "minute", isValidMinute, []int{}, errors.New("invalid minute value")},
 	}
 
 	for _, data := range testSuite {
 		t.Run(data.name, func(t *testing.T) {
-			got, err := prepare(data.str, data.expField, data.fn, data.max)
+			got, err := prepare(data.str, data.expField, data.fn, MinuteLimit)
 			if !reflect.DeepEqual(got, data.expected) || !reflect.DeepEqual(err, data.err) {
 				t.Errorf("got = %d; want = %d", got, data.expected)
 				t.Errorf("got = %d; want = %d", err, data.err)

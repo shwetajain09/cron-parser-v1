@@ -2,7 +2,9 @@ package parser
 
 import "errors"
 
+// this would parse the string array to a body object that represents the expression recieved through the string input
 func ParseStringArray(str []string) (*body, error) {
+	// the expression should have exactly 6 fields
 	if len(str) != 6 {
 		return nil, errors.New("invalid expression")
 	}

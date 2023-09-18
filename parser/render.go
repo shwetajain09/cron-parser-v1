@@ -6,6 +6,7 @@ import (
 	"github.com/jedib0t/go-pretty/table"
 )
 
+// RenderOutput renders the output in a table format
 func RenderOutput(res *response) {
 	t := table.NewWriter()
 	t.AppendRow(table.Row{"minute", res.minutes})
